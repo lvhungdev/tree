@@ -9,7 +9,7 @@ pub struct Tree {
 }
 
 impl Tree {
-    pub fn new(path: &str, max_level: u16) -> Result<Self> {
+    pub fn build(path: &str, max_level: u16) -> Result<Self> {
         if !PathUtils::is_path_directory(path)? {
             return Err(Error::new(ErrorKind::Other, "Path is not a directory"));
         }
