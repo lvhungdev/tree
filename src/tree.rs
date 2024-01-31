@@ -44,46 +44,41 @@ impl Tree {
         let entries: fs::ReadDir = fs::read_dir(&node.absolute_path)?;
 
         for entry in entries.into_iter() {
-            match entry {
-                Ok(entry) => {
-                    let absolute_path: String =
-                        PathUtils::get_absolute_path(entry.path().to_str().unwrap())?;
-                    let name: String = PathUtils::get_name_from_absolute_path(&absolute_path)?;
-                    let is_directory: bool = PathUtils::is_path_directory(&absolute_path)?;
-                    let kind: NodeKind = if is_directory {
-                        NodeKind::Directory
-                    } else {
-                        NodeKind::File
-                    };
+            if let Ok(entry) = entry {
+                let absolute_path: String =
+                    PathUtils::get_absolute_path(entry.path().to_str().unwrap())?;
+                let name: String = PathUtils::get_name_from_absolute_path(&absolute_path)?;
+                let is_directory: bool = PathUtils::is_path_directory(&absolute_path)?;
+                let kind: NodeKind = if is_directory {
+                    NodeKind::Directory
+                } else {
+                    NodeKind::File
+                };
 
-                    let mut child: Node = Node {
-                        absolute_path,
-                        name,
-                        kind,
-                        dir_children: Vec::new(),
-                        file_children: Vec::new(),
-                        level: node.level + 1,
-                        has_next_sibling: true,
-                    };
+                let mut child: Node = Node {
+                    absolute_path,
+                    name,
+                    kind,
+                    dir_children: Vec::new(),
+                    file_children: Vec::new(),
+                    level: node.level + 1,
+                    has_next_sibling: true,
+                };
 
-                    if is_directory {
-                        Self::build_recursive(&mut child, max_level)?;
-                        node.dir_children.push(child);
-                    } else {
-                        node.file_children.push(child);
-                    }
+                if is_directory {
+                    Self::build_recursive(&mut child, max_level)?;
+                    node.dir_children.push(child);
+                } else {
+                    node.file_children.push(child);
                 }
-                Err(_) => {}
             }
         }
 
-        match node.dir_children.last_mut() {
-            Some(child) => child.has_next_sibling = node.file_children.len() > 0,
-            None => {}
+        if let Some(child) = node.dir_children.last_mut() {
+            child.has_next_sibling = !node.file_children.is_empty();
         }
-        match node.file_children.last_mut() {
-            Some(child) => child.has_next_sibling = false,
-            None => {}
+        if let Some(child) = node.file_children.last_mut() {
+            child.has_next_sibling = false;
         }
 
         return Ok(());
